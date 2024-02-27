@@ -10,7 +10,7 @@ Students are expected to:
 Student Info
 =======================
 
-* Name: *YourNameHere*
-* ID: *YourIdHere*
+* Name: Tran Minh Trung
+* ID: BA11-093
 * Group ID: *Your Group ID here*
 
