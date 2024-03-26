@@ -1,10 +1,16 @@
-import model
-import torch
+from tqdm import tqdm
 import torch.optim as optim
+import torch
+import torch.nn as nn
+from CNN.cnn_custom import CNN
 
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-class Training():
-    def __init__(self, model, train_loader, test_loader, epochs, criterion, optimizer, device, save_path):
+model = CNN().to(device)
+criterion = nn.CrossEntropyLoss()
+optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
+class train_test():
+    def __init__(self, model, train_loader, test_loader, epochs , criterion, optimizer, device):
         self.model = model
         self.train_loader = train_loader
         self.test_loader = test_loader
@@ -12,9 +18,8 @@ class Training():
         self.optimizer = optimizer
         self.device = device
         self.epochs = epochs
-        self.save_path = save_path
 
-    def train(self):
+    def runloop(self):
         train_loss = []
         train_acc = []
         test_loss = []
@@ -25,17 +30,22 @@ class Training():
             running_loss = 0.0
             correct = 0
             total = 0
-            for inputs, labels in self.train_loader:
-                inputs, labels = inputs.to(self.device), labels.to(self.device)
-                self.optimizer.zero_grad()
-                outputs = self.model(inputs)
+            for inputs, labels in tqdm(self.train_loader):
+                # print(inputs)
+                inputs, labels = inputs.float().to(self.device), labels.long().to(self.device)
+                optimizer.zero_grad()
+                outputs = self.model(inputs).float()
+
                 loss = self.criterion(outputs, labels)
                 loss.backward()
+
                 self.optimizer.step()
                 running_loss += loss.item()
+
                 _, predicted = outputs.max(1)
                 total += labels.size(0)
                 correct += predicted.eq(labels).sum().item()
+
             train_loss.append(running_loss/len(self.train_loader))
             train_acc.append(100.*correct/total)
 
@@ -44,19 +54,24 @@ class Training():
             correct = 0
             total = 0
             with torch.no_grad():
-                for inputs, labels in self.test_loader:
-                    inputs, labels = inputs.to(self.device), labels.to(self.device)
-                    outputs = self.model(inputs)
+                for inputs, labels in tqdm(self.test_loader):
+                    #                     print(inputs)
+                    inputs, labels = inputs.float().to(self.device), labels.long().to(self.device)
+                    optimizer.zero_grad()
+                    outputs = self.model(inputs).float()
+
                     loss = self.criterion(outputs, labels)
+
+                    self.optimizer.step()
                     running_loss += loss.item()
+
                     _, predicted = outputs.max(1)
                     total += labels.size(0)
                     correct += predicted.eq(labels).sum().item()
-            test_loss.append(running_loss/len(self.test_loader))
-            test_acc.append(100.*correct/total)
+            test_loss.append(running_loss / len(self.test_loader))
+            test_acc.append(100. * correct / total)
 
-            print(f'Epoch: {epoch+1}/{self.epochs}, Training Loss: {train_loss[-1]:.4f}, Training Accuracy: {train_acc[-1]:.2f}%, Test Loss: {test_loss[-1]:.4f}, Test Accuracy: {test_acc[-1]:.2f}%')
-
-            torch.save(self.model.state_dict(), f"{self.save_path}_epoch{epoch + 1}.pth") #save weight
-
+            print(f'Epoch: {epoch+1}/{self.epochs}, '
+                  f'Training Accuracy: {train_acc[-1]:.2f}%, Training Loss: {train_loss[-1]:.4f}, '
+                  f'Test Accuracy: {test_acc[-1]:.2f}%, Test Loss: {test_loss[-1]:.4f}')
         return train_loss, train_acc, test_loss, test_acc
