@@ -27,4 +27,4 @@ train_test(
     train_loader=train_loader, test_loader=test_loader,
     epochs=100, criterion=criterion,
     optimizer=optimizer, device=device
-).runloop()
+).run()
