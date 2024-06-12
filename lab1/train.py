@@ -1,14 +1,7 @@
 from tqdm import tqdm
-import torch.optim as optim
 import torch
-import torch.nn as nn
-from CNN.cnn_custom import CNN
 
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-model = CNN().to(device)
-criterion = nn.CrossEntropyLoss()
-optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
 class train_test():
     def __init__(self, model, train_loader, test_loader, epochs , criterion, optimizer, device):
         self.model = model
@@ -19,7 +12,7 @@ class train_test():
         self.device = device
         self.epochs = epochs
 
-    def runloop(self):
+    def run(self):
         train_loss = []
         train_acc = []
         test_loss = []
@@ -33,7 +26,7 @@ class train_test():
             for inputs, labels in tqdm(self.train_loader):
                 # print(inputs)
                 inputs, labels = inputs.float().to(self.device), labels.long().to(self.device)
-                optimizer.zero_grad()
+                self.optimizer.zero_grad()
                 outputs = self.model(inputs).float()
 
                 loss = self.criterion(outputs, labels)
@@ -55,9 +48,9 @@ class train_test():
             total = 0
             with torch.no_grad():
                 for inputs, labels in tqdm(self.test_loader):
-                    #                     print(inputs)
+                    #print(inputs)
                     inputs, labels = inputs.float().to(self.device), labels.long().to(self.device)
-                    optimizer.zero_grad()
+                    self.optimizer.zero_grad()
                     outputs = self.model(inputs).float()
 
                     loss = self.criterion(outputs, labels)
